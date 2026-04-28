@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grailed Arbitrage Bot</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <span class="logo-icon">🚀</span>
+          <h1>Grailed Arbitrage Bot</h1>
+        </div>
+        <div class="header-actions">
+          <button id="scanBtn" class="btn btn-primary">
+            <span class="btn-icon">▶</span>
+            Start Scan
+          </button>
+          <button id="settingsBtn" class="btn btn-secondary">
+            <span class="btn-icon">⚙</span>
+            Settings
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-item">
+          <span class="status-label">Status</span>
+          <span id="statusIndicator" class="status-badge status-idle">Idle</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Last Scan</span>
+          <span id="lastScanTime">Never</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Total Items</span>
+          <span id="totalItems" class="status-value">0</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">High Velocity</span>
+          <span id="highVelocityCount" class="status-value status-hot">0</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Discord</span>
+          <span id="discordStatus" class="status-badge status-inactive">Not Configured</span>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="search-bar">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search items: e.g., 'Kapital Trucker Hat', 'Nike Dunk', 'Vintage Tee'...">
+          <button id="searchBtn" class="btn btn-primary">Search</button>
+        </div>
+        <div class="search-filters">
+          <select id="brandFilter" class="search-select">
+            <option value="">All Brands</option>
+          </select>
+          <button id="clearSearch" class="btn btn-secondary btn-small" style="display: none;">Clear</button>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">🆕</div>
+          <div class="stat-content">
+            <span class="stat-value" id="newCount">0</span>
+            <span class="stat-label">New Listings</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-content">
+            <span class="stat-value" id="soldCount">0</span>
+            <span class="stat-label">Sold Items</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-content">
+            <span class="stat-value" id="avgPrice">$0</span>
+            <span class="stat-label">Avg Price</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-content">
+            <span class="stat-value" id="hotDeals">0</span>
+            <span class="stat-label">Hot Deals</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="content-grid">
+        <!-- Items List -->
+        <div class="panel items-panel">
+          <div class="panel-header">
+            <h2>Items</h2>
+            <div class="filter-tabs">
+              <button class="filter-tab active" data-filter="all">All</button>
+              <button class="filter-tab" data-filter="new">New</button>
+              <button class="filter-tab" data-filter="sold">Sold</button>
+              <button class="filter-tab" data-filter="high-velocity">High Velocity</button>
+              <button class="filter-tab" data-filter="available">Available</button>
+              <button class="filter-tab" data-filter="deals">💰 Deals</button>
+            </div>
+          </div>
+          <div id="itemsList" class="items-list">
+            <div class="empty-state">
+              <span class="empty-icon">📭</span>
+              <p>No items yet. Run a scan to see results.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <!-- Price Chart -->
+          <div class="panel chart-panel">
+            <div class="panel-header">
+              <h2>Price Distribution</h2>
+            </div>
+            <div class="chart-container">
+              <canvas id="priceChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Brand Stats -->
+          <div class="panel brands-panel">
+            <div class="panel-header">
+              <h2>Top Brands</h2>
+            </div>
+            <div id="brandStats" class="brand-stats">
+              <div class="empty-state">
+                <p>No data yet</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity Log -->
+          <div class="panel log-panel">
+            <div class="panel-header">
+              <h2>Activity Log</h2>
+              <button id="clearLog" class="btn btn-small">Clear</button>
+            </div>
+            <div id="activityLog" class="activity-log">
+              <div class="log-entry log-info">
+                <span class="log-time">--:--:--</span>
+                <span class="log-message">Dashboard initialized</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="settingsForm">
+          <div class="form-group">
+            <label>Price Range</label>
+            <div class="price-inputs">
+              <input type="number" id="minPrice" name="minPrice" placeholder="Min" min="0">
+              <span>to</span>
+              <input type="number" id="maxPrice" name="maxPrice" placeholder="Max" min="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Brands to Track (comma separated)</label>
+            <input type="text" id="brands" name="brands" placeholder="Nike, Supreme, Gucci...">
+          </div>
+
+          <div class="form-group">
+            <label>Scan Interval (minutes)</label>
+            <input type="number" id="scanInterval" name="scanInterval" min="1" max="1440">
+          </div>
+
+          <div class="form-group">
+            <label>Velocity Threshold (hours)</label>
+            <input type="number" id="velocityThreshold" name="velocityThreshold" min="1" max="168">
+          </div>
+
+          <div class="form-group">
+            <label>Discord Webhook URL</label>
+            <input type="url" id="discordWebhook" name="discordWebhook" placeholder="https://discord.com/api/webhooks/...">
+            <button type="button" id="testDiscord" class="btn btn-secondary btn-small">Test Webhook</button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelSettings">Cancel</button>
+        <button type="button" class="btn btn-primary" id="saveSettings">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Item Detail Modal -->
+  <div id="itemModal" class="modal">
+    <div class="modal-content item-modal-content">
+      <div class="modal-header">
+        <h2 id="itemModalTitle">Item Details</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="itemModalBody"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
